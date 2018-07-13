@@ -21,7 +21,7 @@ include $(BLUETOOTH_3RD_DIR)/embedded/$(customer)/$(project)/app_common/build/ma
 srcdirs :=
 appsources :=
 
-ENABLE_AUDIO_STREAMING ?= TRUE
+ENABLE_AUDIO_STREAMING ?= FALSE
 ifeq ($(strip $(ENABLE_AUDIO_STREAMING)),TRUE)
   GLOBAL_DEFINE += -DAPP_HD_AUDIO_STREAMING_INCLUDED=TRUE
 endif
