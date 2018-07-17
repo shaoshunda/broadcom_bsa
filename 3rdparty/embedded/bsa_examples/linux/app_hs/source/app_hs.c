@@ -42,7 +42,18 @@
 #endif /* PCM_ALSA */
 
 #ifndef BSA_SCO_ROUTE_DEFAULT
-#define BSA_SCO_ROUTE_DEFAULT BSA_SCO_ROUTE_HCI
+#define BSA_SCO_ROUTE_DEFAULT BSA_SCO_ROUTE_PCM
+#endif
+
+/*
+ * For test, if SCO ROUTE is PCM, BSA don't need to hold the local sound card,
+ * because the external alsa-utils redirect audio path like these:
+ * arecord -Dhw:1,0 -f S16_LE -c 2 -r 16000 -t raw | aplay -t raw -Dhw:0,0 -f S16_LE -c 2 -r 16000
+ * arecord -Dhw:0,0 -f S16_LE -c 2 -r 16000 -t raw | aplay -t raw -Dhw:1,0 -f S16_LE -c 2 -r 16000
+ */
+#if (BSA_SCO_ROUTE_DEFAULT == BSA_SCO_ROUTE_PCM)
+#undef PCM_ALSA
+#define PCM_ALSA_DISABLE_HS
 #endif
 
 /* ui keypress definition */
@@ -1371,6 +1382,7 @@ int app_hs_register(void)
     tBSA_HS_CONN_CB * p_conn;
 
     APP_DEBUG0("start Register");
+    APP_DEBUG1("audio path using: BSA_SCO_ROUTE_%s", BSA_SCO_ROUTE_DEFAULT ? "HCI" : "PCM");
 
     app_hs_cb.sco_route = BSA_SCO_ROUTE_DEFAULT;
 
