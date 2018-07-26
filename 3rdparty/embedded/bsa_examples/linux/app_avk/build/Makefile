@@ -22,7 +22,7 @@ srcdirs :=
 appsources :=
 
 # add ENABLE_ALSA=TRUE at the command line to enable
-ENABLE_ALSA ?= FALSE
+ENABLE_ALSA ?= TRUE
 ifeq ($(strip $(ENABLE_ALSA)), TRUE)
   GLOBAL_DEFINE += -DPCM_ALSA
   LINKLIBS += -lasound
