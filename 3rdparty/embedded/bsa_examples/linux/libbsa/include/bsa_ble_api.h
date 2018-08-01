@@ -421,6 +421,7 @@ typedef struct
     UINT16      conn_id;
     tGATT_EXEC_FLAG     exec_write;
     tBSA_STATUS     status;
+	UINT8         flag;
 } tBSA_BLE_SE_EXEC_WRITE_MSG;
 
 typedef struct

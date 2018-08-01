@@ -782,9 +782,9 @@ static void app_ble_wifi_introducer_profile_cback(tBSA_BLE_EVT event,
         app_dm_set_ble_visibility(TRUE, TRUE);
         break;
 
-    case BSA_BLE_SE_CONFIRM_EVT:
-        APP_INFO1("BSA_BLE_SE_CONFIRM_EVT  :conn_id:0x%x, status:%d",
-            p_data->ser_confirm.conn_id, p_data->ser_confirm.status);
+    case BSA_BLE_SE_CONF_EVT:  // It maybe same with BSA_BLE_SE_CONFIRM_EVT
+        APP_INFO1("BSA_BLE_SE_CONF_EVT  :conn_id:0x%x, status:%d",
+            p_data->ser_conf.conn_id, p_data->ser_conf.status);
         break;
 
     default:
