@@ -1466,7 +1466,8 @@ int app_mgr_config(void)
         app_xml_config.bd_addr[5] = rand_r(&rand_seed);
 
 #ifdef DUEROS
-        sprintf((char *)app_xml_config.name, "DuerOS_%02x%02x", app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
+        sprintf((char *)app_xml_config.name, "%s", "DuerOS_");
+        app_get_mac_address((char *)app_xml_config.name + sizeof("DuerOS_") - 1, 5, "wlan0");
 #else
         sprintf((char *)app_xml_config.name, "My BSA Bluetooth Device %02x%02x", app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
 #endif
