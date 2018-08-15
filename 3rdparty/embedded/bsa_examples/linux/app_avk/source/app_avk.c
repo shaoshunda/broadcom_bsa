@@ -670,9 +670,10 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
             }
 
             /* Change the code below based on which interface audio is going out to. */
-            /*char buffer[100];
-            sprintf(buffer, "amixer -q cset name='Headphone Playback Volume' '%d'", app_avk_cb.volume);
-            system(buffer);*/
+            char buffer[100];
+            sprintf(buffer, "amixer set Master Playback %d", app_avk_cb.volume * 100 / BSA_MAX_ABS_VOLUME);
+            if (-1 == system(buffer))
+                APP_ERROR1("app_avk_cback: set volume error: %d, volume: %d", errno, app_avk_cb.volume);
         }
         else
         {
@@ -1418,14 +1419,14 @@ void app_avk_volume_up(UINT8 rc_handle)
         return;
     }
 
-    if ((connection->peer_features & BSA_RC_FEAT_RCTG) && connection->is_rc_open)
+    if ((connection->peer_features & BSA_AVK_FEAT_RCCT) && connection->is_rc_open)
     {
         app_avk_rc_send_click(BSA_AVK_RC_VOL_UP, rc_handle);
     }
     else
     {
         APP_ERROR1("Unable to send AVRC command, is support RCTG %d, is rc open %d",
-            (connection->peer_features & BSA_RC_FEAT_RCTG), connection->is_rc_open);
+            (connection->peer_features & BSA_AVK_FEAT_RCCT), connection->is_rc_open);
     }
 }
 
@@ -1448,14 +1449,14 @@ void app_avk_volume_down(UINT8 rc_handle)
         return;
     }
 
-    if ((connection->peer_features & BSA_RC_FEAT_RCTG) && connection->is_rc_open)
+    if ((connection->peer_features & BSA_AVK_FEAT_RCCT) && connection->is_rc_open)
     {
         app_avk_rc_send_click(BSA_AVK_RC_VOL_DOWN, rc_handle);
     }
     else
     {
         APP_ERROR1("Unable to send AVRC command, is support RCTG %d, is rc open %d",
-            (connection->peer_features & BSA_RC_FEAT_RCTG), connection->is_rc_open);
+            (connection->peer_features & BSA_AVK_FEAT_RCCT), connection->is_rc_open);
     }
 }
 
