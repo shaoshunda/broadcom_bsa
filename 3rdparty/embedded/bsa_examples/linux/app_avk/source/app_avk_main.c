@@ -28,31 +28,13 @@
 #include "app_utils.h"
 #include "app_socket.h"
 
+#ifdef DUEROS
+static int dueros_socket_fd = -1;
+char sock_path[]="/data/bsa/config/socket_dueros";
+#else
 tAPP_SOCKET app_socket;
 char sock_path[]="/data/bsa/config/socket_avk";
-
-
-/* Menu items */
-enum
-{
-    APP_AVK_MENU_DISCOVERY = 1,
-    APP_AVK_MENU_REGISTER,
-    APP_AVK_MENU_DEREGISTER,
-    APP_AVK_MENU_OPEN,
-    APP_AVK_MENU_CLOSE,
-    APP_AVK_MENU_PLAY_START,
-    APP_AVK_MENU_PLAY_STOP,
-    APP_AVK_MENU_PLAY_PAUSE,
-    APP_AVK_MENU_PLAY_NEXT_TRACK,
-    APP_AVK_MENU_PLAY_PREVIOUS_TRACK,
-    APP_AVK_MENU_RC_CMD,
-    APP_AVK_MENU_GET_ELEMENT_ATTR,
-    APP_AVK_MENU_GET_CAPABILITIES,
-    APP_AVK_MENU_REGISTER_NOTIFICATION,
-    APP_AVK_MENU_SEND_DELAY_RPT,
-    APP_AVK_MENU_QUIT = 99
-};
-
+#endif
 
 /*******************************************************************************
  **
@@ -137,6 +119,62 @@ static BOOLEAN app_avk_mgt_callback(tBSA_MGT_EVT event, tBSA_MGT_MSG *p_data)
  ** Returns          void
  **
  *******************************************************************************/
+#ifdef DUEROS
+int main(int argc, char **argv)
+{
+    int choice, bytes;
+    char msg[64];
+
+    /* Open connection to BSA Server */
+    app_mgt_init();
+    if (app_mgt_open(NULL, app_avk_mgt_callback) < 0)
+    {
+        APP_ERROR0("Unable to connect to server");
+        return -1;
+    }
+
+    /* Init XML state machine */
+    app_xml_init();
+
+    app_avk_init(NULL);
+
+    dueros_socket_fd = setup_socket_client(sock_path);
+    if (dueros_socket_fd < 0) {
+        APP_ERROR0("Fail to connect server socket\n");
+        return 0;
+    }
+
+    APP_DEBUG0("Service connected\n");
+
+    do {
+        memset(msg, 0, sizeof(msg));
+        bytes = socket_recieve(dueros_socket_fd, msg, sizeof(msg));
+        if (bytes == 0 ) {
+            APP_DEBUG0("server leaved, break\n");
+            break;
+        }
+
+        choice = atoi(msg);
+        APP_DEBUG1("msg = %s, choice :%d\n", msg, choice);
+
+        if (choice == APP_AVK_MENU_REGISTER)
+            app_avk_register();
+        else
+            app_avk_rc_send_cmd(choice);
+    } while(choice != APP_AVK_MENU_QUIT);
+
+    /* Terminate the profile */
+    app_avk_end();
+
+    /* Close BSA before exiting (to release resources) */
+    app_mgt_close();
+
+    teardown_socket_client(dueros_socket_fd);
+
+    return 0;
+}
+
+#else
 int main(int argc, char **argv)
 {
     int choice, avrcp_evt, bytes, i;
@@ -280,6 +318,32 @@ int main(int argc, char **argv)
                 printf("Unknown choice:%d\n", connection_index);
             break;
 
+        case APP_AVK_MENU_VOLUME_UP:
+            /* Example to volume up */
+            printf("tiantian, volume up\n");
+            printf("Choose connection index\n");
+            app_avk_display_connections();
+            connection_index = app_get_choice("\n");
+            connection = app_avk_find_connection_by_index(connection_index);
+            if(connection)
+                app_avk_volume_up(connection->rc_handle);
+            else
+                printf("Unknown choice:%d\n", connection_index);
+            break;
+
+        case APP_AVK_MENU_VOLUME_DOWN:
+            /* Example to volume down */
+            printf("tiantian, volume down\n");
+            printf("Choose connection index\n");
+            app_avk_display_connections();
+            connection_index = app_get_choice("\n");
+            connection = app_avk_find_connection_by_index(connection_index);
+            if(connection)
+                app_avk_volume_down(connection->rc_handle);
+            else
+                printf("Unknown choice:%d\n", connection_index);
+            break;
+
         case APP_AVK_MENU_PLAY_NEXT_TRACK:
             /* Example to play next track */
             printf("Choose connection index\n");
@@ -386,3 +450,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
+#endif

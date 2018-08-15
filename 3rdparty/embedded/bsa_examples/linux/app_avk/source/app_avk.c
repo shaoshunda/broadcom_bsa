@@ -1328,6 +1328,136 @@ void app_avk_rc_send_click(UINT8 command, UINT8 rc_handle)
     app_avk_rc_send_command(BSA_AV_STATE_RELEASE, command, rc_handle);
 }
 
+/*******************************************************************************
+ **
+ ** Function         app_avk_rc_send_cmd
+ **
+ ** Description      Example of send avrcp commands
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void app_avk_rc_send_cmd(UINT8 command)
+{
+    int index;
+    tAPP_AVK_CONNECTION *conn = NULL;
+
+    int num_conn = app_avk_num_connections();
+
+    if(num_conn == 0) {
+        APP_INFO0("No connections");
+        return;
+    }
+
+    for (index = 0; index < APP_AVK_MAX_CONNECTIONS; index++) {
+        conn = app_avk_find_connection_by_index(index);
+        if(conn->in_use) {
+            APP_INFO1("index: %d\n", index);
+            APP_INFO1("Connection index %d:%02X:%02X:%02X:%02X:%02X:%02X",
+                index,
+                conn->bda_connected[0], conn->bda_connected[1],
+                conn->bda_connected[2], conn->bda_connected[3],
+                conn->bda_connected[4], conn->bda_connected[5]);
+
+            switch (command) {
+            case APP_AVK_MENU_PLAY_START:
+                APP_INFO0("AVRCP PLAY");
+                app_avk_play_start(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_PLAY_STOP:
+                APP_INFO0("AVRCP STOP");
+                app_avk_play_stop(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_PLAY_PAUSE:
+                APP_INFO0("AVRCP PAUSE");
+                app_avk_play_pause(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_VOLUME_UP:
+                APP_INFO0("AVRCP VOLUME UP");
+                app_avk_volume_up(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_VOLUME_DOWN:
+                APP_INFO0("AVRCP VOLUME DOWN");
+                app_avk_volume_down(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_PLAY_NEXT_TRACK:
+                APP_INFO0("AVRCP NEXT TRACK");
+                app_avk_play_next_track(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_PLAY_PREVIOUS_TRACK:
+                APP_INFO0("AVRCP PREVIOUS TRACK");
+                app_avk_play_previous_track(conn->rc_handle);
+                break;
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+ **
+ ** Function         app_avk_volume_up
+ **
+ ** Description      Example of volume up
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void app_avk_volume_up(UINT8 rc_handle)
+{
+    tAPP_AVK_CONNECTION *connection = NULL;
+    connection = app_avk_find_connection_by_rc_handle(rc_handle);
+    if(connection == NULL)
+    {
+        APP_DEBUG1("could not find connection handle %d", rc_handle);
+        return;
+    }
+
+    if ((connection->peer_features & BSA_RC_FEAT_RCTG) && connection->is_rc_open)
+    {
+        app_avk_rc_send_click(BSA_AVK_RC_VOL_UP, rc_handle);
+    }
+    else
+    {
+        APP_ERROR1("Unable to send AVRC command, is support RCTG %d, is rc open %d",
+            (connection->peer_features & BSA_RC_FEAT_RCTG), connection->is_rc_open);
+    }
+}
+
+/*******************************************************************************
+ **
+ ** Function         app_avk_volume_down
+ **
+ ** Description      Example of volume down
+ **
+ ** Returns          void
+ **
+ *******************************************************************************/
+void app_avk_volume_down(UINT8 rc_handle)
+{
+    tAPP_AVK_CONNECTION *connection = NULL;
+    connection = app_avk_find_connection_by_rc_handle(rc_handle);
+    if(connection == NULL)
+    {
+        APP_DEBUG1("could not find connection handle %d", rc_handle);
+        return;
+    }
+
+    if ((connection->peer_features & BSA_RC_FEAT_RCTG) && connection->is_rc_open)
+    {
+        app_avk_rc_send_click(BSA_AVK_RC_VOL_DOWN, rc_handle);
+    }
+    else
+    {
+        APP_ERROR1("Unable to send AVRC command, is support RCTG %d, is rc open %d",
+            (connection->peer_features & BSA_RC_FEAT_RCTG), connection->is_rc_open);
+    }
+}
 
 /*******************************************************************************
 **
