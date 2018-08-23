@@ -26,9 +26,12 @@
 #include "app_mgt.h"
 #include "app_disc.h"
 #include "app_utils.h"
+#include "app_dm.h"
+#include "app_manager.h"
 #include "app_socket.h"
 
 #ifdef DUEROS
+extern tAPP_MGR_CB app_mgr_cb;
 static int dueros_socket_fd = -1;
 char sock_path[]="/data/bsa/config/socket_dueros";
 #else
@@ -122,19 +125,37 @@ static BOOLEAN app_avk_mgt_callback(tBSA_MGT_EVT event, tBSA_MGT_MSG *p_data)
 #ifdef DUEROS
 int main(int argc, char **argv)
 {
-    int choice, bytes;
+    int choice, bytes, mode;
     char msg[64];
 
     /* Open connection to BSA Server */
     app_mgt_init();
-    if (app_mgt_open(NULL, app_avk_mgt_callback) < 0)
-    {
+    if (app_mgt_open(NULL, app_avk_mgt_callback) < 0) {
         APP_ERROR0("Unable to connect to server");
         return -1;
     }
 
     /* Init XML state machine */
     app_xml_init();
+
+    if (app_mgr_config()) {
+        APP_ERROR0("Couldn't configure successfully, exiting");
+        return -1;
+    }
+
+    /* Display FW versions */
+    app_mgr_read_version();
+
+    /* Get the current Stack mode */
+    mode = app_dm_get_dual_stack_mode();
+    if (mode < 0) {
+        APP_ERROR0("app_dm_get_dual_stack_mode failed");
+        return -1;
+    } else {
+        /* Save the current DualStack mode */
+        app_mgr_cb.dual_stack_mode = mode;
+        APP_INFO1("Current DualStack mode:%s", app_mgr_get_dual_stack_mode_desc());
+    }
 
     app_avk_init(NULL);
 
@@ -171,6 +192,7 @@ int main(int argc, char **argv)
 
     teardown_socket_client(dueros_socket_fd);
 
+    APP_DEBUG0("exit app avk");
     return 0;
 }
 
