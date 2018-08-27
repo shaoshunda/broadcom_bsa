@@ -1565,7 +1565,7 @@ int main(int argc, char **argv)
             APP_ERROR0("Couldn't open successfully, exiting");
             exit(-1);
         }
-        if (app_mgr_config())
+        if (app_mgr_config(NULL))
         {
             APP_ERROR0("Couldn't configure successfully, exiting");
             exit(-1);
@@ -1707,7 +1707,7 @@ int main(int argc, char **argv)
             {
                 APP_ERROR0("app_mgr_open failed");
             }
-            else if (app_mgr_config())
+            else if (app_mgr_config(NULL))
             {
                 APP_ERROR0("app_mgr_config failed");
             }

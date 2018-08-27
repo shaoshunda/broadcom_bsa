@@ -381,6 +381,8 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
             connection->ccb_handle = p_data->sig_chnl_open.ccb_handle;
             connection->is_open = TRUE;
             connection->is_streaming_chl_open = FALSE;
+
+            app_avk_socket_send(APP_AVK_BT_CONNECT);
         }
 
         app_avk_cb.open_pending = FALSE;
@@ -480,8 +482,6 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
 
         break;
 
-
-
     case BSA_AVK_STOP_EVT:
         APP_DEBUG1("BSA_AVK_STOP_EVT handle: %d  Suspended: %d", p_data->stop_streaming.ccb_handle, p_data->stop_streaming.suspended);
 
@@ -520,7 +520,6 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
         break;
 
     case BSA_AVK_RC_OPEN_EVT:
-
         if(p_data->rc_open.status == BSA_SUCCESS)
         {
             connection = app_avk_add_connection(p_data->rc_open.bd_addr);
@@ -643,6 +642,36 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
         break;
 
     case BSA_AVK_REGISTER_NOTIFICATION_EVT:
+/*
+        APP_DEBUG1("BSA_AVK_REGISTER_NOTIFICATION_EVT handle:%d", p_data->reg_notif.handle);
+        APP_DEBUG1("event_id:0x%x, opcode:0x%x, pdu:0x%x\n",
+                p_data->reg_notif.rsp.event_id,
+                p_data->reg_notif.rsp.opcode,
+                p_data->reg_notif.rsp.pdu);
+*/
+        if (p_data->reg_notif.rsp.event_id == AVRC_EVT_VOLUME_CHANGE) {
+            APP_INFO1("Volume changed :0x%x", p_data->reg_notif.rsp.param.volume);
+        }
+
+        if (p_data->reg_notif.rsp.event_id == AVRC_EVT_PLAY_STATUS_CHANGE) {
+            switch(p_data->reg_notif.rsp.param.play_status) {
+                case AVRC_PLAYSTATE_PLAYING:
+                    APP_INFO0("Play Status Playing");
+                    app_avk_socket_send(APP_AVK_BT_PLAY);
+                    break;
+                case AVRC_PLAYSTATE_STOPPED:
+                case AVRC_PLAYSTATE_PAUSED:
+                    APP_INFO0("Play Status Stopped");
+                    app_avk_socket_send(APP_AVK_BT_STOP);
+                    break;
+                default:
+                    APP_INFO1("Play Status Playing : %02x",
+                        p_data->reg_notif.rsp.param.play_status);
+                break;
+            }
+        }
+        break;
+
     case BSA_AVK_LIST_PLAYER_APP_ATTR_EVT:
     case BSA_AVK_LIST_PLAYER_APP_VALUES_EVT:
     case BSA_AVK_SET_PLAYER_APP_VALUE_EVT:
@@ -1340,6 +1369,7 @@ void app_avk_rc_send_click(UINT8 command, UINT8 rc_handle)
  ** Returns          void
  **
  *******************************************************************************/
+extern int app_avk_wait_close;
 void app_avk_rc_send_cmd(UINT8 command)
 {
     int index;
@@ -1349,6 +1379,9 @@ void app_avk_rc_send_cmd(UINT8 command)
 
     if(num_conn == 0) {
         APP_INFO0("No connections");
+        if(command == APP_AVK_MENU_CLOSE)
+            app_avk_socket_send(APP_AVK_BT_DISCONNECT);
+
         return;
     }
 
@@ -1396,6 +1429,12 @@ void app_avk_rc_send_cmd(UINT8 command)
             case APP_AVK_MENU_PLAY_PREVIOUS_TRACK:
                 APP_INFO0("AVRCP PREVIOUS TRACK");
                 app_avk_play_previous_track(conn->rc_handle);
+                break;
+
+            case APP_AVK_MENU_CLOSE:
+                APP_INFO0("AVK CLOSE");
+                app_avk_wait_close = 1;
+                app_avk_close(conn->bda_connected);
                 break;
             }
         }
