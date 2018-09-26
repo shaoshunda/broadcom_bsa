@@ -151,7 +151,11 @@ int main(int argc, char **argv)
 
     /* Start Headset service*/
     app_hs_start(NULL);
-
+#if 1
+    while(1) {
+        sleep(1);
+    }
+#else
     do
     {
         app_hs_display_main_menu();
@@ -203,7 +207,7 @@ int main(int argc, char **argv)
             break;
         }
     } while (choice != APP_HS_KEY_QUIT);      /* While user don't exit application */
-
+#endif
     /* Start Headset service*/
     app_hs_stop();
 
