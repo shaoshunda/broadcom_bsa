@@ -490,10 +490,15 @@ static void app_avk_cback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
                 break;
             }
 
-            connection->is_started_streaming = TRUE;
-            connection->is_streaming_chl_open = TRUE;
-            app_avk_handle_start(p_data, connection);
-            app_avk_cb.pStreamingConn = connection;
+            APP_DEBUG1("connection->is_started_streaming: %d", connection->is_started_streaming);
+            APP_DEBUG1("connection->is_streaming_chl_open: %d", connection->is_streaming_chl_open);
+            if(connection->is_started_streaming) {
+                break;
+            } else if (connection->is_streaming_chl_open) {
+                connection->is_started_streaming = TRUE;
+                app_avk_handle_start(p_data, connection);
+                app_avk_cb.pStreamingConn = connection;
+            }
         }
 
         break;
