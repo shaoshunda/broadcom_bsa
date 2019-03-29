@@ -652,7 +652,7 @@ int main(int argc, char **argv)
             app_cce_menu_close();
             break;
         case APP_CCE_MENU_DISC:
-            app_disc_start_regular(NULL);
+            app_disc_start_regular(NULL, 0);
             break;
         case APP_CCE_MENU_QUIT:
             break;

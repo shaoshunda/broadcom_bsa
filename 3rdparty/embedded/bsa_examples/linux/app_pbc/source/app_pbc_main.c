@@ -478,7 +478,7 @@ int main(int argc, char **argv)
 
         case APP_PBC_MENU_DISC:
             /* Example to perform Device discovery (in blocking mode) */
-            app_disc_start_regular(NULL);
+            app_disc_start_regular(NULL, 0);
             break;
 
         case APP_PBC_MENU_QUIT:

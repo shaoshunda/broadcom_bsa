@@ -184,7 +184,7 @@ int main(int argc, char **argv)
             break;
         case APP_FTC_KEY_DISC:
             /* Example to perform Device discovery (in blocking mode) */
-            app_disc_start_regular(NULL);
+            app_disc_start_regular(NULL, 0);
             break;
 
         case APP_FTC_KEY_QUIT:

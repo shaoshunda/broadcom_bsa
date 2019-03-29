@@ -736,7 +736,7 @@ void BSA::on_btnSearch_clicked()
     m_disc_device_list.clear();
     m_disc_row_number = 0;
 
-    app_disc_start_regular(DiscoveryCallback);
+    app_disc_start_regular(DiscoveryCallback, 0);
 }
 
 // DiscoveryCallback function. Used to populate the table with list of devices available to pair
