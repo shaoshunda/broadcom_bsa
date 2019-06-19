@@ -538,6 +538,13 @@ int app_ble_client_read(void)
         APP_ERROR1("app_ble_client_read client %d was not enabled yet", client_num);
         return -1;
     }
+
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read failed : read pending!");
+        return -1;
+    }
+
     service = app_get_choice("Enter Service UUID to read(eg. x1800)");
     is_primary = app_get_choice("Enter Is_primary value(eg:0,1)");
     ser_inst_id = app_get_choice("Enter Instance ID for Service UUID(eg. 0,1,2..)");
@@ -579,10 +586,13 @@ int app_ble_client_read(void)
     }
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
+
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -1013,6 +1023,7 @@ int app_ble_client_unpair(void)
         (app_xml_remote_devices_db[client_num].in_use != FALSE))
     {
         bdcpy(sec_remove_dev.bd_addr, app_xml_remote_devices_db[client_num].bd_addr);
+        sec_remove_dev.device_type = app_xml_remote_devices_db[client_num].device_type; /* CS2762044 */
         status = BSA_SecRemoveDevice(&sec_remove_dev);
     }
     else
@@ -2598,6 +2609,12 @@ int app_ble_client_read_battery_level(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_battery_level failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_BATTERY_SERVICE;
     char_id = BSA_BLE_GATT_UUID_BATTERY_LEVEL;
 
@@ -2619,10 +2636,12 @@ int app_ble_client_read_battery_level(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2657,6 +2676,12 @@ int app_ble_client_read_mfr_name(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_mfr_name failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_MANU_NAME;
 
@@ -2678,10 +2703,12 @@ int app_ble_client_read_mfr_name(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2715,6 +2742,12 @@ int app_ble_client_read_model_number(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_model_number failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_MODEL_NUMBER_STR;
 
@@ -2736,10 +2769,12 @@ int app_ble_client_read_model_number(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2773,6 +2808,12 @@ int app_ble_client_read_serial_number(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_serial_number failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_SERIAL_NUMBER_STR;
 
@@ -2794,10 +2835,12 @@ int app_ble_client_read_serial_number(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2832,6 +2875,12 @@ int app_ble_client_read_hardware_revision(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_hardware_revision failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_HW_VERSION_STR;
 
@@ -2853,10 +2902,12 @@ int app_ble_client_read_hardware_revision(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2891,6 +2942,12 @@ int app_ble_client_read_firmware_revision(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_firmware_revision failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_FW_VERSION_STR;
 
@@ -2912,10 +2969,12 @@ int app_ble_client_read_firmware_revision(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -2950,6 +3009,12 @@ int app_ble_client_read_software_revision(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_software_revision failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_SW_VERSION_STR;
 
@@ -2971,10 +3036,12 @@ int app_ble_client_read_software_revision(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;
@@ -3008,6 +3075,12 @@ int app_ble_client_read_system_id(void)
         return -1;
     }
 
+    if(app_ble_cb.ble_client[client_num].read_pending)
+    {
+        APP_ERROR0("app_ble_client_read_system_id failed : read pending!");
+        return -1;
+    }
+
     service = BSA_BLE_UUID_SERVCLASS_DEVICE_INFORMATION;
     char_id = BSA_BLE_GATT_UUID_SYSTEM_ID;
 
@@ -3029,10 +3102,12 @@ int app_ble_client_read_system_id(void)
     ble_read_param.conn_id = app_ble_cb.ble_client[client_num].conn_id;
     ble_read_param.auth_req = 0x00;
 
+    app_ble_cb.ble_client[client_num].read_pending = TRUE;
     status = BSA_BleClRead(&ble_read_param);
     if (status != BSA_SUCCESS)
     {
         APP_ERROR1("app_ble_client_read failed status = %d", status);
+        app_ble_cb.ble_client[client_num].read_pending = FALSE;
         return -1;
     }
     return 0;

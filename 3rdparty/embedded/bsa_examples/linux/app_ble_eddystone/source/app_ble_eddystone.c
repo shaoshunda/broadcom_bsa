@@ -17,11 +17,8 @@
 #include "app_disc.h"
 
 #include "app_dm.h"
+#include "app_ble_server.h"
 #include "app_ble_eddystone.h"
-
-/* Whether to use muti-adv feature with eddystone advertisement */
-/* This feature needs FW support */
-// #define APP_BLE_EDDYSTONE_MULTI_ADV
 
 /*
 * Defines
@@ -99,11 +96,6 @@ UINT8 eddystone_adv_data[APP_BLE_EDDYSTONE_MAX_ADV_DATA_LEN] =
 
 tAPP_DISCOVERY_CB app_ble_eddystone_init_disc_cb;
 
-UINT8 app_ble_eddystone_index = 1;
-BOOLEAN app_ble_eddystone_uid_in_use = FALSE;
-BOOLEAN app_ble_eddystone_url_in_use = FALSE;
-BOOLEAN app_ble_eddystone_tlm_in_use = FALSE;
-
 tBSA_DM_GET_CONFIG bt_config;
 /*
  * Local functions
@@ -114,7 +106,6 @@ static int app_ble_eddystone_le_client_close(void);
 static int app_ble_eddystone_le_client_deregister(void);
 static UINT8 app_ble_eddystone_power_level_to_byte_value(UINT8 txPowerLevel);
 static int app_ble_eddystone_disable_adv(UINT8 inst_id);
-static int app_ble_eddystone_set_adv_params(UINT8 inst_id);
 
 /*******************************************************************************
  **
@@ -141,12 +132,12 @@ void app_ble_eddystone_init(void)
  **
  ** Description     start eddystone UID advertisement
  **
- ** Parameters      None
+ ** Parameters      index : instance id for multi adv
  **
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_uid_adv(void)
+int app_ble_eddystone_start_eddystone_uid_adv(UINT8 index)
 {
     UINT8  inst_id = 0;
 
@@ -166,17 +157,7 @@ int app_ble_eddystone_start_eddystone_uid_adv(void)
 
     APP_INFO0("app_ble_eddystone_start_eddystone_uid_adv");
 
-    if(app_ble_eddystone_uid_in_use)
-    {
-        APP_INFO0("already advertising");
-        return 0;
-    }
-
-    app_ble_eddystone_uid_in_use = TRUE;
-
-#ifdef APP_BLE_EDDYSTONE_MULTI_ADV
-    inst_id = app_ble_eddystone_index++;
-#endif
+    inst_id = index;
 
     memset(service_data, 0, APP_BLE_EDDYSTONE_SERVICE_DAT_LEN);
 
@@ -204,9 +185,6 @@ int app_ble_eddystone_start_eddystone_uid_adv(void)
     adv_conf.service_data_uuid.len = 2;
     adv_conf.service_data_uuid.uu.uuid16 = APP_BLE_EDDYSTONE_UUID16;
 
-    /* set adv params */
-    app_ble_eddystone_set_adv_params(inst_id);
-
     /* start advertising */
     app_dm_set_ble_adv_data(&adv_conf);
 
@@ -228,7 +206,7 @@ int app_ble_eddystone_start_eddystone_uid_adv(void)
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_url_adv(void)
+int app_ble_eddystone_start_eddystone_url_adv(UINT8 index)
 {
     UINT8  inst_id = 0;
 
@@ -250,17 +228,7 @@ int app_ble_eddystone_start_eddystone_url_adv(void)
 
     APP_INFO0("app_ble_eddystone_start_eddystone_url_adv");
 
-    if(app_ble_eddystone_url_in_use)
-    {
-        APP_INFO0("already advertising");
-        return 0;
-    }
-
-    app_ble_eddystone_url_in_use = TRUE;
-
-#ifdef APP_BLE_EDDYSTONE_MULTI_ADV
-    inst_id = app_ble_eddystone_index++;
-#endif
+    inst_id = index;
 
     memset(service_data, 0, APP_BLE_EDDYSTONE_SERVICE_DAT_LEN);
 
@@ -290,9 +258,6 @@ int app_ble_eddystone_start_eddystone_url_adv(void)
     adv_conf.service_data_uuid.len = 2;
     adv_conf.service_data_uuid.uu.uuid16 = APP_BLE_EDDYSTONE_UUID16;
 
-    /* set adv params */
-    app_ble_eddystone_set_adv_params(inst_id);
-
     /* start advertising */
     app_dm_set_ble_adv_data(&adv_conf);
 
@@ -313,7 +278,7 @@ int app_ble_eddystone_start_eddystone_url_adv(void)
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_tlm_adv(void)
+int app_ble_eddystone_start_eddystone_tlm_adv(UINT8 index)
 {
     UINT8   inst_id = 0;
 
@@ -337,17 +302,7 @@ int app_ble_eddystone_start_eddystone_tlm_adv(void)
 
     APP_INFO0("app_ble_eddystone_start_eddystone_tlm_adv");
 
-    if(app_ble_eddystone_tlm_in_use)
-    {
-        APP_INFO0("already advertising");
-        return 0;
-    }
-
-    app_ble_eddystone_tlm_in_use = TRUE;
-
-#ifdef APP_BLE_EDDYSTONE_MULTI_ADV
-    inst_id = app_ble_eddystone_index++;
-#endif
+    inst_id = index;
 
     memset(service_data, 0, APP_BLE_EDDYSTONE_SERVICE_DAT_LEN);
 
@@ -394,9 +349,6 @@ int app_ble_eddystone_start_eddystone_tlm_adv(void)
     adv_conf.service_data_uuid.len = 2;
     adv_conf.service_data_uuid.uu.uuid16 = APP_BLE_EDDYSTONE_UUID16;
 
-    /* set adv params */
-    app_ble_eddystone_set_adv_params(inst_id);
-
     /* start advertising */
     app_dm_set_ble_adv_data(&adv_conf);
 
@@ -439,26 +391,11 @@ int app_ble_eddystone_start_eddystone_tlm_adv(void)
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_stop_eddystone_adv(void)
+int app_ble_eddystone_stop_eddystone_adv(UINT8 index)
 {
     APP_INFO0("app_ble_eddystone_stop_eddystone_adv");
 
-#ifdef APP_BLE_EDDYSTONE_MULTI_ADV
-    /* stop advertising for all adverting instances */
-    while(app_ble_eddystone_index > 1)
-    {
-        app_ble_eddystone_index--;
-        app_ble_eddystone_disable_adv(app_ble_eddystone_index);
-    }
-
-#else
-    app_ble_eddystone_disable_adv(0);
-
-#endif
-
-    app_ble_eddystone_uid_in_use = FALSE;
-    app_ble_eddystone_url_in_use = FALSE;
-    app_ble_eddystone_tlm_in_use = FALSE;
+    app_ble_eddystone_disable_adv(index);
 
     return 0;
 }
@@ -1262,7 +1199,7 @@ static int app_ble_eddystone_disable_adv(UINT8 inst_id)
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-static int app_ble_eddystone_set_adv_params(UINT8 inst_id)
+int app_ble_eddystone_set_adv_params(UINT8 inst_id)
 {
     /* set adv params */
     tBSA_DM_BLE_ADV_PARAM params;

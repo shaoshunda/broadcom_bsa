@@ -440,6 +440,7 @@ typedef struct
 typedef struct
 {
     BD_ADDR bd_addr; /* BdAddr of remote device */
+    tBT_DEVICE_TYPE device_type;
 } tBSA_SEC_REMOVE_DEV;
 
 typedef struct

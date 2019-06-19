@@ -43,6 +43,11 @@ enum
     APP_BLE_MENU_CONFIG_BLE_CONN_PARAM,
     APP_BLE_MENU_CONFIG_BLE_ADV_PARAM,
     APP_BLE_MENU_WAKE_ON_BLE,
+#if defined (APP_BLE_DLE_TEST) /* for test purposes only */
+    APP_BLE_MENU_READ_DEFAULT_DATA_LEN,
+    APP_BLE_MENU_WRITE_DEFAULT_DATA_LEN,
+    APP_BLE_MENU_READ_MAX_DATA_LEN,
+#endif
 
     APP_BLECL_MENU_REGISTER,
     APP_BLECL_MENU_DEREGISTER,
@@ -116,7 +121,11 @@ void app_ble_display_menu (void)
     APP_INFO1("\t%d => Configure BLE Connection Parameter",APP_BLE_MENU_CONFIG_BLE_CONN_PARAM);
     APP_INFO1("\t%d => Configure BLE Advertisement Parameters",APP_BLE_MENU_CONFIG_BLE_ADV_PARAM);
     APP_INFO1("\t%d => Configure for Wake on BLE",APP_BLE_MENU_WAKE_ON_BLE);
-
+#if defined (APP_BLE_DLE_TEST) /* for test purposes only */
+    APP_INFO1("\t%d => HCI LE Read Default Data Length",APP_BLE_MENU_READ_DEFAULT_DATA_LEN);
+    APP_INFO1("\t%d => HCI LE Write Default Data Length",APP_BLE_MENU_WRITE_DEFAULT_DATA_LEN);
+    APP_INFO1("\t%d => HCI LE Read Max Data Length",APP_BLE_MENU_READ_MAX_DATA_LEN);
+#endif
     APP_INFO0("\t**** Bluetooth Low Energy Client menu ****");
     APP_INFO1("\t%d => Register client app", APP_BLECL_MENU_REGISTER);
     APP_INFO1("\t%d => Deregister Client app", APP_BLECL_MENU_DEREGISTER);
@@ -265,6 +274,19 @@ void app_ble_menu(void)
             app_ble_wake_configure();
             break;
 
+#if defined (APP_BLE_DLE_TEST) /* for test purposes only */
+        case APP_BLE_MENU_READ_DEFAULT_DATA_LEN:
+            app_ble_read_default_data_len();
+            break;
+
+        case APP_BLE_MENU_WRITE_DEFAULT_DATA_LEN:
+            app_ble_write_default_data_len();
+            break;
+
+       case APP_BLE_MENU_READ_MAX_DATA_LEN:
+            app_ble_read_max_data_len();
+            break;
+#endif
         case APP_BLECL_MENU_REGISTER:
             app_ble_client_register(APP_BLE_MAIN_INVALID_UUID);
             break;

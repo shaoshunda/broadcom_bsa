@@ -242,7 +242,9 @@ int app_mgr_set_bt_config(BOOLEAN enable)
 {
     int status;
     tBSA_DM_SET_CONFIG bt_config;
-
+#if (IOS_IAP_INCLUDED == TRUE)
+    UINT8 iap_eir_data[] = {0x00, 0x00, 0x00, 0x00, 0xDE, 0xCA, 0xFA, 0xDE, 0xDE, 0xCA, 0xDE, 0xAF, 0xDE, 0xCA, 0xCA, 0xFF};
+#endif
     /* Init config parameter */
     status = BSA_DmSetConfigInit(&bt_config);
 
@@ -256,6 +258,11 @@ int app_mgr_set_bt_config(BOOLEAN enable)
     strncpy((char *)bt_config.name, (char *)app_xml_config.name, sizeof(bt_config.name));
     bt_config.name[sizeof(bt_config.name) - 1] = '\0';
     memcpy(bt_config.class_of_device, app_xml_config.class_of_device, sizeof(DEV_CLASS));
+#if (IOS_IAP_INCLUDED == TRUE)
+    bt_config.config_mask |= BSA_DM_CONFIG_EIR_MASK;
+    bt_config.eir_length = sizeof(iap_eir_data);
+    memcpy(bt_config.eir_data, iap_eir_data, bt_config.eir_length); 
+#endif
 
     APP_DEBUG1("Enable:%d", bt_config.enable);
     APP_DEBUG1("Discoverable:%d", bt_config.discoverable);
@@ -1097,6 +1104,7 @@ int app_mgr_sec_unpair(void)
         (app_xml_remote_devices_db[device_index].in_use != FALSE))
     {
         bdcpy(sec_remove.bd_addr, app_xml_remote_devices_db[device_index].bd_addr);
+        sec_remove.device_type = app_xml_remote_devices_db[device_index].device_type;
         status = BSA_SecRemoveDevice(&sec_remove);
     }
     else
@@ -1473,11 +1481,11 @@ int app_mgr_config(cmd_send_callback cb)
         app_mgr_get_bt_config((char *)app_xml_config.bd_addr, BD_ADDR_LEN);
 
 #ifdef BLUETOOTH_DATA_INTERACTION
-                sprintf((char *)app_xml_config.name, "%s%02X%02X", "DuerOS_",
-                    app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
+        sprintf((char *)app_xml_config.name, "%s%02X%02X", "DuerOS_",
+            app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
 #else
-                sprintf((char *)app_xml_config.name, "My BSA Bluetooth Device %02X%02X",
-                    app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
+        sprintf((char *)app_xml_config.name, "My BSA Bluetooth Device %02X%02X",
+            app_xml_config.bd_addr[4], app_xml_config.bd_addr[5]);
 #endif
 
         memcpy(app_xml_config.class_of_device, local_class_of_device, sizeof(DEV_CLASS));

@@ -662,9 +662,9 @@ typedef union
     tBSA_AVK_VENDOR_RSP_MSG vendor_rsp;
     tBSA_AVK_CP_INFO_MSG cp_info;
 
-    /* meta commands responses */
-    tBSA_AVK_REG_NOTIF_MSG              reg_notif;
     tBSA_AVK_REG_NOTIF_CMD_MSG          reg_notif_cmd;
+
+    /* meta commands responses */
     tBSA_AVK_LIST_APP_ATTR_MSG          list_app_attr;
     tBSA_AVK_LIST_APP_VALUES_MSG        list_app_values;
     tBSA_AVK_SET_PLAYER_APP_VALUE_MSG   set_app_val;
@@ -672,6 +672,7 @@ typedef union
     tBSA_AVK_GET_ELEMENT_ATTR_MSG       elem_attr;
     tBSA_AVK_GET_PLAY_STATUS_MSG        get_play_status;
     tBSA_AVK_ABS_VOLUME_CMD_MSG         abs_volume;
+    tBSA_AVK_REG_NOTIF_MSG              reg_notif_rsp;
 
     /* browsing command responses */
     tBSA_AVK_SET_ADDRESSED_PLAYER_MSG   addr_player;
@@ -781,6 +782,8 @@ typedef struct
     UINT8 label;
     UINT8 data[BSA_AVK_VENDOR_SIZE_MAX];
     UINT16 length;
+    UINT8 subunit_type;
+    UINT8 subunit_id;
 } tBSA_AVK_VEN_CMD;
 
 /* data associated with BSA_AvkCancel */

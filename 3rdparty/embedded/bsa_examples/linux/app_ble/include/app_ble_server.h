@@ -29,6 +29,19 @@ int app_ble_server_find_free_space(void);
 
 /*******************************************************************************
  **
+ ** Function         app_ble_server_find_free_server
+ **
+ ** Description      find free server for BLE server application
+ **
+ ** Parameters
+ **
+ ** Returns          positive number(include 0) if successful, error code otherwise
+ **
+ *******************************************************************************/
+int app_ble_server_find_free_server(void);
+
+/*******************************************************************************
+ **
  ** Function         app_ble_server_display
  **
  ** Description      display BLE server

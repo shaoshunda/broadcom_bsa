@@ -1001,7 +1001,7 @@ static void app_xml_dev_db_tagBeginCallbackFunc(nxml_t handle,
         const char *tagName, unsigned len)
 {
     if (strncmp(tagName, APP_XML_DEV_BDADDR_KEY,
-            strlen(APP_XML_CONF_ENABLE_KEY)) == 0)
+            strlen(APP_XML_DEV_BDADDR_KEY)) == 0)
     {
         app_xml_param_cb.dev_tag = DEV_BDADDR_KEY;
     }
@@ -1072,7 +1072,7 @@ static void app_xml_dev_db_tagBeginCallbackFunc(nxml_t handle,
         app_xml_param_cb.dev_tag = DEV_DEVICE_TYPE_KEY;
     }
     else if (strncmp(tagName, APP_XML_DEV_INQ_RESULT_TYPE, strlen(
-            APP_XML_DEV_DEVICE_TYPE)) == 0)
+            APP_XML_DEV_INQ_RESULT_TYPE)) == 0)
     {
         app_xml_param_cb.dev_tag = DEV_INQ_RESULT_TYPE;
     }
@@ -1155,7 +1155,7 @@ static void app_xml_dev_db_tagBeginCallbackFunc(nxml_t handle,
             APP_XML_DEV_LENC_LTK)) == 0)
     {
         app_xml_param_cb.dev_tag = DEV_LENC_LTK_KEY;
-    }    
+    }
     else if (strncmp(tagName, APP_XML_DEV_LENC_DIV, strlen(
             APP_XML_DEV_LENC_DIV)) == 0)
     {
@@ -1734,7 +1734,7 @@ int app_xml_update_ble_key_db(tAPP_XML_REM_DEVICE *p_stored_device_db,
             case BSA_LE_KEY_LENC:
                 printf("Update BSA_LE_KEY_LENC\n");
                 memcpy(p_stored_device_db[index].lenc_ltk, ble_key.lenc_key.ltk,
-                        sizeof(p_stored_device_db[index].lenc_ltk));                
+                        sizeof(p_stored_device_db[index].lenc_ltk));
                 p_stored_device_db[index].lenc_div = ble_key.lenc_key.div;
                 p_stored_device_db[index].lenc_key_size = ble_key.lenc_key.key_size;
                 p_stored_device_db[index].lenc_sec_level = ble_key.lenc_key.sec_level;

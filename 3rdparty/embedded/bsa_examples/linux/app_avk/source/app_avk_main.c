@@ -249,8 +249,6 @@ int main(int argc, char **argv)
 {
     int choice, avrcp_evt, bytes, i;
     int connection_index;
-    UINT32 first_param, second_param, third_param;
-    tAVRC_UID uid;
     UINT16 delay;
     tAPP_AVK_CONNECTION *connection = NULL;
     char msg[64];
@@ -301,9 +299,8 @@ int main(int argc, char **argv)
     }
     do
     {
-        app_avk_display_main_menu();
-
         if (use_socket == 0) {
+            app_avk_display_main_menu();
             choice = app_get_choice("Select action");
         } else {
             memset(msg,0,sizeof(msg));
@@ -390,7 +387,6 @@ int main(int argc, char **argv)
 
         case APP_AVK_MENU_VOLUME_UP:
             /* Example to volume up */
-            printf("tiantian, volume up\n");
             printf("Choose connection index\n");
             app_avk_display_connections();
             connection_index = app_get_choice("\n");
@@ -403,7 +399,6 @@ int main(int argc, char **argv)
 
         case APP_AVK_MENU_VOLUME_DOWN:
             /* Example to volume down */
-            printf("tiantian, volume down\n");
             printf("Choose connection index\n");
             app_avk_display_connections();
             connection_index = app_get_choice("\n");

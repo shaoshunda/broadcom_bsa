@@ -994,15 +994,7 @@ int BSA::remove_device(BD_ADDR bd_addr)
     int status;
     tBSA_SEC_REMOVE_DEV remove_dev;
     tAPP_XML_REM_DEVICE *p_xml_dev;
-
-    BSA_SecRemoveDeviceInit(&remove_dev);
-    bdcpy(remove_dev.bd_addr, bd_addr);
-    status = BSA_SecRemoveDevice(&remove_dev);
-    if (status != BSA_SUCCESS)
-    {
-        APP_ERROR1("BSA_SecRemoveDevice failed:%d", status);
-        return -1;
-    }
+    tBT_DEVICE_TYPE device_type;
 
     /* Remove the device from Security database (XML) */
     app_read_xml_remote_devices();
@@ -1012,12 +1004,25 @@ int BSA::remove_device(BD_ADDR bd_addr)
         p_xml_dev = &app_xml_remote_devices_db[dev_index];
         if ((p_xml_dev->in_use) && (bdcmp(p_xml_dev->bd_addr, bd_addr) == 0))
         {
+            /* save the device type */
+            device_type = p_xml_dev->device_type;
+
             /* Mark this device as unused */
             p_xml_dev->in_use = FALSE;
 
             /* Update XML database */
             app_write_xml_remote_devices();
         }
+    }
+
+    BSA_SecRemoveDeviceInit(&remove_dev);
+    bdcpy(remove_dev.bd_addr, bd_addr);
+    remove_dev.device_type = device_type;
+    status = BSA_SecRemoveDevice(&remove_dev);
+    if (status != BSA_SUCCESS)
+    {
+        APP_ERROR1("BSA_SecRemoveDevice failed:%d", status);
+        return -1;
     }
 
     return 0;
@@ -2460,46 +2465,46 @@ void AvkCallback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
 
     case BSA_AVK_REGISTER_NOTIFICATION_EVT: // Notification of upate done by peer
     {
-        APP_DEBUG1("BSA_AVK_REGISTER_NOTIFICATION_EVT : handle %d", p_data->reg_notif.handle);
+        APP_DEBUG1("BSA_AVK_REGISTER_NOTIFICATION_EVT : handle %d", p_data->reg_notif_rsp.handle);
 
-        tAPP_AVK_CONNECTION * conn = app_avk_find_connection_by_rc_handle(p_data->reg_notif.handle);
+        tAPP_AVK_CONNECTION * conn = app_avk_find_connection_by_rc_handle(p_data->reg_notif_rsp.handle);
 
         // addressed player changed
-        if(p_data->reg_notif.rsp.event_id == AVRC_EVT_ADDR_PLAYER_CHANGE )
+        if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_ADDR_PLAYER_CHANGE )
         {
-            conn->m_uiAddressedPlayer = p_data->reg_notif.rsp.param.addr_player.player_id;
+            conn->m_uiAddressedPlayer = p_data->reg_notif_rsp.rsp.param.addr_player.player_id;
 
-            conn->m_uidCounterAddrPlayer = p_data->reg_notif.rsp.param.addr_player.uid_counter;
+            conn->m_uidCounterAddrPlayer = p_data->reg_notif_rsp.rsp.param.addr_player.uid_counter;
 
             APP_DEBUG1("AVRC_EVT_ADDR_PLAYER_CHANGE, id %d", conn->m_uiAddressedPlayer);
 
-            app_avk_rc_get_folder_items(AVRC_SCOPE_PLAYER_LIST, 0, 10, p_data->reg_notif.handle);
+            app_avk_rc_get_folder_items(AVRC_SCOPE_PLAYER_LIST, 0, 10, p_data->reg_notif_rsp.handle);
 
         }
 
-        conn = gThis->IsActiveAconnection(p_data->reg_notif.handle);
+        conn = gThis->IsActiveAconnection(p_data->reg_notif_rsp.handle);
         if(conn == NULL)
         {
             break;
         }
 
-        APP_DEBUG1("BSA_AVK_REGISTER_NOTIFICATION_EVT : ID %d", p_data->reg_notif.rsp.event_id);
+        APP_DEBUG1("BSA_AVK_REGISTER_NOTIFICATION_EVT : ID %d", p_data->reg_notif_rsp.rsp.event_id);
 
         // On track change event, clear media elements app content and send request to get new content
-        if(p_data->reg_notif.rsp.event_id == AVRC_EVT_TRACK_CHANGE)
+        if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_TRACK_CHANGE)
         {
             memset(&gThis->m_listMediaElements, 0 , sizeof(tBSA_AVK_GET_ELEMENT_ATTR_MSG));
 
-            app_avk_rc_get_element_attr_command(p_data->reg_notif.handle);
+            app_avk_rc_get_element_attr_command(p_data->reg_notif_rsp.handle);
 
             // get current play status
-            app_avk_rc_get_play_status_command(p_data->reg_notif.handle);
+            app_avk_rc_get_play_status_command(p_data->reg_notif_rsp.handle);
         }
 
         // Set UI for play status change notification
-        else if(p_data->reg_notif.rsp.event_id == AVRC_EVT_PLAY_STATUS_CHANGE)
+        else if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_PLAY_STATUS_CHANGE)
         {
-            switch(p_data->reg_notif.rsp.param.play_status)
+            switch(p_data->reg_notif_rsp.rsp.param.play_status)
             {
             case AVRC_PLAYSTATE_STOPPED:
                 gThis->AvkPlayStateChanged(AVRC_PLAYSTATE_STOPPED);
@@ -2513,25 +2518,25 @@ void AvkCallback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
             }
         }
         // play position changed
-        else if(p_data->reg_notif.rsp.event_id == AVRC_EVT_PLAY_POS_CHANGED )
+        else if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_PLAY_POS_CHANGED )
         {
-            QVariant qpos = p_data->reg_notif.rsp.param.play_pos;;
+            QVariant qpos = p_data->reg_notif_rsp.rsp.param.play_pos;;
             QVariant qlen = 0;
 
             emit gThis->m_uiSignal->UpdateProgress(qlen, qpos);
         }
 
         // app settings changed
-        else if(p_data->reg_notif.rsp.event_id == AVRC_EVT_APP_SETTING_CHANGE )
+        else if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_APP_SETTING_CHANGE )
         {
             UINT8 attr_ids[8];
             UINT8 attr_vals[8];
-            UINT8 num_val = p_data->reg_notif.rsp.param.player_setting.num_attr;
+            UINT8 num_val = p_data->reg_notif_rsp.rsp.param.player_setting.num_attr;
 
             for(int i = 0; i < num_val; i++)
             {
-                attr_ids[i] = p_data->reg_notif.rsp.param.player_setting.attr_id[i];
-                attr_vals[i] = p_data->reg_notif.rsp.param.player_setting.attr_value[i];
+                attr_ids[i] = p_data->reg_notif_rsp.rsp.param.player_setting.attr_id[i];
+                attr_vals[i] = p_data->reg_notif_rsp.rsp.param.player_setting.attr_value[i];
 
             }
 
@@ -2542,13 +2547,13 @@ void AvkCallback(tBSA_AVK_EVT event, tBSA_AVK_MSG *p_data)
 
 
         // available players changed
-        else if(p_data->reg_notif.rsp.event_id == AVRC_EVT_AVAL_PLAYERS_CHANGE )
+        else if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_AVAL_PLAYERS_CHANGE )
         {
             APP_DEBUG0("AVRC_EVT_AVAL_PLAYERS_CHANGE");
         }
 
         // now playing changed
-        else if(p_data->reg_notif.rsp.event_id == AVRC_EVT_NOW_PLAYING_CHANGE )
+        else if(p_data->reg_notif_rsp.rsp.event_id == AVRC_EVT_NOW_PLAYING_CHANGE )
         {
         }
     }

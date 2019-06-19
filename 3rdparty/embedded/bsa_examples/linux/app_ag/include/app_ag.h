@@ -31,6 +31,12 @@ extern "C"
 #define APP_AG_MAX_NUM_CONN    1
 #define APP_AG_SCO_IN_SOUND_FILE    "./test_files/ag/sco_ag_in.wav"
 #define APP_AG_SCO_OUT_SOUND_FILE   "./test_files/ag/sco_ag_out.wav"
+#define APP_AG_SCO_OUT_SOUND_FILE_16K   "./test_files/ag/sco_ag_out_16k.wav"
+
+#define APP_AG_SAMPLE_CONVERT_NO    0
+#define APP_AG_SAMPLE_CONVERT_UP    1
+#define APP_AG_SAMPLE_CONVERT_DOWN  2
+typedef UINT8 tAPP_AG_SAMPLE_CONVERT;
 
 /* control block (not needed to be stored in NVRAM) */
 typedef struct
@@ -46,6 +52,8 @@ typedef struct
     tUIPC_CH_ID             uipc_channel[APP_AG_MAX_NUM_CONN];
     UINT8                   pcmbuf[240*2];
     BOOLEAN                 stop_play;
+    char                    sco_out_file[255];
+    tAPP_AG_SAMPLE_CONVERT  sample_convert;
 } tAPP_AG_CB;
 
 extern tAPP_AG_CB app_ag_cb;

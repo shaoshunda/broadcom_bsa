@@ -75,6 +75,8 @@ enum
     APP_AV_MENU_SEND_META_RSP_TO_GET_ELEMENT_ATTR,
     APP_AV_MENU_SEND_META_RSP_TO_GET_PLAY_STATUS,
     APP_AV_MENU_SEND_RC_NOTIFICATIONS,
+    APP_AV_MENU_CHANGE_AV_FILE,
+    APP_AV_MENU_RESET_FOLDER_LOCATION,
     APP_AV_MENU_QUIT = 99
 };
 
@@ -125,22 +127,30 @@ void app_av_display_main_menu(void)
 #endif
 #ifdef APP_AV_BCST_INCLUDED
     printf("  AV Broadcast menu:\n");
-    printf("    %d => AV Broadcast Register (Create local stream)\n", APP_AV_BCST_MENU_REGISTER);
-    printf("    %d => AV Broadcast Deregister (Remove local stream)\n", APP_AV_BCST_MENU_DEREGISTER);
+    printf("    %d => AV Broadcast Register (Create local stream)\n",
+            APP_AV_BCST_MENU_REGISTER);
+    printf("    %d => AV Broadcast Deregister (Remove local stream)\n",
+            APP_AV_BCST_MENU_DEREGISTER);
     printf("    %d => AV Broadcast Play Tone \n", APP_AV_BCST_MENU_PLAY_TONE);
     printf("    %d => AV Broadcast Play Microphone \n", APP_AV_BCST_MENU_PLAY_MIC);
 #ifdef APP_AV_BCST_PLAY_LOOPDRV_INCLUDED
     printf("    %d => AV Broadcast Play Loopback driver\n", APP_AV_BCST_MENU_PLAY_LOOPDRV);
 #endif
-    printf("    %d => AV Broadcast Play Kernel Audio (Tone, ALSA PCM)\n", APP_AV_BCST_MENU_PLAY_MM);
+    printf("    %d => AV Broadcast Play Kernel Audio (Tone, ALSA PCM)\n",
+            APP_AV_BCST_MENU_PLAY_MM);
     printf("    %d => AV Broadcast Stop\n", APP_AV_BCST_MENU_STOP);
     printf("    %d => AV Broadcast Configure UIPC\n", APP_AV_BCST_MENU_UIPC_CFG);
 #endif
-
-    printf("    %d => AV Send Meta Response to Get Element Attributes Command\n", APP_AV_MENU_SEND_META_RSP_TO_GET_ELEMENT_ATTR);
-    printf("    %d => AV Send Meta Response to Get Play Status Command\n", APP_AV_MENU_SEND_META_RSP_TO_GET_PLAY_STATUS);
-    printf("    %d => AV Send Metadata Change Notifications\n", APP_AV_MENU_SEND_RC_NOTIFICATIONS);
-
+    printf("    %d => AV Send Meta Response to Get Element Attributes Command\n",
+            APP_AV_MENU_SEND_META_RSP_TO_GET_ELEMENT_ATTR);
+    printf("    %d => AV Send Meta Response to Get Play Status Command\n",
+            APP_AV_MENU_SEND_META_RSP_TO_GET_PLAY_STATUS);
+    printf("    %d => AV Send Metadata Change Notifications\n",
+            APP_AV_MENU_SEND_RC_NOTIFICATIONS);
+    printf("    %d => Change AV file for PTS test\n",
+            APP_AV_MENU_CHANGE_AV_FILE);
+    printf("    %d => Reset folder location for PTS test\n",
+            APP_AV_MENU_RESET_FOLDER_LOCATION);
     printf("    %d => Quit\n", APP_AV_MENU_QUIT);
 }
 
@@ -205,6 +215,7 @@ int main(int argc, char **argv)
     int choice, volume;
     UINT16 tone_sampling_freq = 48000;
     tBSA_AVK_RELAY_AUDIO relay_param;
+    BD_ADDR bd_addr;
 
     /* Open connection to BSA Server */
     app_mgt_init();
@@ -224,6 +235,18 @@ int main(int argc, char **argv)
         app_av_register();
     }
 
+#if 1
+    bd_addr[0] = 0xb0;
+    bd_addr[1] = 0xf1;
+    bd_addr[2] = 0xa3;
+    bd_addr[3] = 0x00;
+    bd_addr[4] = 0x3d;
+    bd_addr[5] = 0xf2;
+    app_av_open(bd_addr);
+    sleep(3);
+    app_av_play_tone();
+    while(1);
+#else
     do
     {
         app_av_display_main_menu();
@@ -489,8 +512,16 @@ int main(int argc, char **argv)
                 break;
             }
 
+            break;
 
-            /* Quit Menu */
+        case APP_AV_MENU_CHANGE_AV_FILE:
+            app_av_change_song(TRUE);
+            break;
+
+        case APP_AV_MENU_RESET_FOLDER_LOCATION:
+            app_av_reset_folder_info();
+            break;
+
         case APP_AV_MENU_QUIT:
             printf("main: Bye Bye\n");
             break;
@@ -500,7 +531,7 @@ int main(int argc, char **argv)
             break;
         }
     } while (choice != APP_AV_MENU_QUIT); /* While user don't exit application */
-
+#endif
     /* Terminate the profile */
     app_av_end();
 

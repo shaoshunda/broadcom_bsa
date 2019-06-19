@@ -239,6 +239,7 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_UPDATE_SEPS_EVT  20      /* Update all SEPs to available or unavailable */
 #define BTA_AV_RC_CMD_TOUT_EVT  21      /* Timeout waiting for response for AVRC command */
 #define BTA_AV_DELAY_RPT_EVT    22      /* Delay report received */  /* BSA_SPECIFIC */
+#define BTA_AV_META_RSP_EVT     23      /* metadata response */
 
 typedef UINT8 tBTA_AV_EVT;
 
@@ -710,8 +711,8 @@ BTA_API void BTA_AvRemoteCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_RC rc_id,
 **                  BTA_AV_FEAT_VENDOR.
 **
 **                  Note - If compnay id is 0, the default company ID will be used
-**                         from bta_av_cfg.c. Company id could be BT_SIG_COMP_ID (0x001958) 
-**                         for AVRCP vendor specific command or assigned company id.  
+**                         from bta_av_cfg.c. Company id could be BT_SIG_COMP_ID (0x001958)
+**                         for AVRCP vendor specific command or assigned company id.
 **
 ** Returns          void
 **
@@ -729,8 +730,8 @@ BTA_API void BTA_AvVendorCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE cmd_code
 **                  enabled with feature BTA_AV_FEAT_VENDOR.
 **
 **                  Note - If compnay id is 0, the default company ID will be used
-**                         from bta_av_cfg.c. Company id could be BT_SIG_COMP_ID (0x001958) 
-**                         for AVRCP vendor specific command or assigned company id.  
+**                         from bta_av_cfg.c. Company id could be BT_SIG_COMP_ID (0x001958)
+**                         for AVRCP vendor specific command or assigned company id.
 **
 ** Returns          void
 **
@@ -798,7 +799,7 @@ BTA_API void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, B
 ** Function         BTA_AvUpdateStreamEndPoints
 **
 ** Description      Change all the source SEPs to available or unavailable
-**                  When the update operation is complete the callback function 
+**                  When the update operation is complete the callback function
 **                  will be called with a BTA_AV_UPDATE_SEPS_EVT
 **
 ** Parameter        available: True Set all SEPs to available

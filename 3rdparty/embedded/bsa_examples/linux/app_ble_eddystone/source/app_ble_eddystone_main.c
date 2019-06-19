@@ -97,7 +97,7 @@ void app_ble_eddystone_display_menu (void)
  *******************************************************************************/
 void app_ble_eddystone_menu(void)
 {
-    int choice;
+    int choice, index;
 
     app_ble_eddystone_init();
 
@@ -110,19 +110,29 @@ void app_ble_eddystone_menu(void)
         switch(choice)
         {
         case APP_BLE_EDDYSTONE_START_EDDYSTONE_UID_ADV:
-            app_ble_eddystone_start_eddystone_uid_adv();
+            index = app_get_choice("inst_id for multi adv:(1~3)");
+            app_ble_eddystone_set_adv_params(index);
+            GKI_delay(1000);
+            app_ble_eddystone_start_eddystone_uid_adv(index);
             break;
 
         case APP_BLE_EDDYSTONE_START_EDDYSTONE_URL_ADV:
-            app_ble_eddystone_start_eddystone_url_adv();
+            index = app_get_choice("inst_id for multi adv:(1~3)");
+            app_ble_eddystone_set_adv_params(index);
+            GKI_delay(1000);
+            app_ble_eddystone_start_eddystone_url_adv(index);
             break;
 
         case APP_BLE_EDDYSTONE_START_EDDYSTONE_TLM_ADV:
-            app_ble_eddystone_start_eddystone_tlm_adv();
+            index = app_get_choice("inst_id for multi adv:(1~3)");
+            app_ble_eddystone_set_adv_params(index);
+            GKI_delay(1000);
+            app_ble_eddystone_start_eddystone_tlm_adv(index);
             break;
 
         case APP_BLE_EDDYSTONE_STOP_EDDYSTONE_ADV:
-            app_ble_eddystone_stop_eddystone_adv();
+            index = app_get_choice("inst_id for multi adv:(1~3)");
+            app_ble_eddystone_stop_eddystone_adv(index);
             break;
 
         case APP_BLE_EDDYSTONE_START_EDDYSTONE_UID_SERVICE:

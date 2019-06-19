@@ -2547,8 +2547,9 @@ int app_hh_remove_dev(void)
     tBSA_HH_REMOVE_DEV hh_remove;
     tBSA_SEC_REMOVE_DEV sec_remove;
     tAPP_HH_DEVICE *p_hh_dev;
-    tAPP_XML_REM_DEVICE *p_xml_dev;
+    tAPP_XML_REM_DEVICE *p_xml_dev = NULL;
     BD_ADDR bd_addr;
+    tBT_DEVICE_TYPE device_type;
 #if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
     tAPP_BLE_CLIENT_DB_ELEMENT *p_blecl_db_elmt;
 #endif
@@ -2608,16 +2609,6 @@ int app_hh_remove_dev(void)
     /* Remove the device from the HH application's database */
     app_hh_db_remove_by_bda(bd_addr);
 
-    /* Remove the device from Security database (BSA Server) */
-    BSA_SecRemoveDeviceInit(&sec_remove);
-    bdcpy(sec_remove.bd_addr, bd_addr);
-    status = BSA_SecRemoveDevice(&sec_remove);
-    if (status != BSA_SUCCESS)
-    {
-        APP_ERROR1("BSA_SecRemoveDevice failed: %d",status);
-        /* No return on purpose (to erase it from XML database) */
-    }
-
     /* Remove the device from Security database (XML) */
     app_read_xml_remote_devices();
 
@@ -2627,6 +2618,8 @@ int app_hh_remove_dev(void)
         if ((p_xml_dev->in_use) &&
             (bdcmp(p_xml_dev->bd_addr, bd_addr) == 0))
         {
+            /* save the device type */
+            device_type = p_xml_dev->device_type;
             /* Mark this device as unused */
             p_xml_dev->in_use = FALSE;
             /* Update XML database */
@@ -2634,6 +2627,15 @@ int app_hh_remove_dev(void)
         }
     }
 
+    /* Remove the device from Security database (BSA Server) */
+    BSA_SecRemoveDeviceInit(&sec_remove);
+    bdcpy(sec_remove.bd_addr, bd_addr);
+    sec_remove.device_type = device_type;
+    status = BSA_SecRemoveDevice(&sec_remove);
+    if (status != BSA_SUCCESS)
+    {
+        APP_ERROR1("BSA_SecRemoveDevice failed: %d",status);
+    }
 #if (defined(BLE_INCLUDED) && BLE_INCLUDED == TRUE)
     APP_INFO0("Try to remove device from BLE DB");
 

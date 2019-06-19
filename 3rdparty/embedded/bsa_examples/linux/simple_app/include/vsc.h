@@ -35,3 +35,28 @@ extern int vsc_send_init_param(tBSA_TM_VSC *vsc_param);
  *******************************************************************************/
 extern int vsc_send(tBSA_TM_VSC *vsc_param);
 
+/*******************************************************************************
+ **
+ ** Function         vse_register
+ **
+ ** Description      This function is used to register for Vendor Specific Events
+ **
+ ** Parameters
+ **
+ ** Returns          int
+ **
+ *******************************************************************************/
+extern int vse_register(void);
+
+/*******************************************************************************
+ **
+ ** Function         vse_deregister
+ **
+ ** Description      This function is used to deregister for Vendor Specific Events
+ **
+ ** Parameters
+ **
+ ** Returns          int
+ **
+ *******************************************************************************/
+extern int vse_deregister(void);

@@ -730,6 +730,7 @@ int main (int argc, char **argv)
     tBSA_TM_VSC         vsc_param;
     tBSA_TM_HCI_CMD     hci_param;
     tBSA_SEC_SET_SECURITY sec_local_config;
+    char ch;
 
     memset(&simple_app,0,sizeof(simple_app));
 
@@ -910,11 +911,28 @@ int main (int argc, char **argv)
         break;
 
     case VSC:
+       /* if VSC is RX_TEST register for vendor specific events */
+        if(simple_app.bsa_vsc.opcode == 0xfc52)
+        {
+            vse_register();
+        }
+
         vsc_send_init_param(&vsc_param);
         vsc_param.opcode = simple_app.bsa_vsc.opcode;          /* VSC */
         vsc_param.length = simple_app.bsa_vsc.length;          /* Data Len */
         memcpy(vsc_param.data, simple_app.bsa_vsc.data, simple_app.bsa_vsc.length);
         vsc_send(&vsc_param);
+
+        /* if VSC is RX_TEST, wait for key then deregister for VS events */
+        if(simple_app.bsa_vsc.opcode == 0xfc52)
+        {
+            do
+            {
+                ch = getchar();
+            } while (ch != 10);
+
+            vse_deregister();
+        }
         break;
 
     case HCI_CMD:

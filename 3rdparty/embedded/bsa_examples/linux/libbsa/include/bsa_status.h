@@ -145,9 +145,10 @@ typedef UINT16 tBSA_STATUS;
 #define BSA_ERROR_SRV_AV_CP_NOT_SUPPORTED      706  /* Content protection is not supported by all headsets */
 #define BSA_ERROR_SRV_AV_BCST_NOT_SUPPORTED    707  /* Broadcast AV not supported */
 #define BSA_ERROR_SRV_AV_BR_CT_NOT_SUPPORTED   708  /* Bit Rate Control not supported */
+#define BSA_ERROR_SRV_AV_REJECTED              709  /* AV configure rejected */
 
 /* Insert new AV errors here and don't forget to update the following line (offset) */
-#define BSA_ERROR_SRV_AV_OFFSET                 BSA_ERROR_SRV_AV_BR_CT_NOT_SUPPORTED
+#define BSA_ERROR_SRV_AV_OFFSET                 BSA_ERROR_SRV_AV_REJECTED
 
 #define BSA_ERROR_SRV_AV_FAIL           (BSA_ERROR_SRV_AV_OFFSET + BTA_AV_FAIL)                     /* Generic failure */
 #define BSA_ERROR_SRV_AV_FAIL_SDP       (BSA_ERROR_SRV_AV_OFFSET + BTA_AV_FAIL_SDP)       /* Service not found */

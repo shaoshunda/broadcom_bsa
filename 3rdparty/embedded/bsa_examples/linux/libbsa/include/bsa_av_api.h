@@ -196,6 +196,7 @@ typedef UINT8 tBSA_AV_CMD;
                                          * after BTA_AV_SIG_TIME_VAL ms */
 #define BSA_AV_FEAT_EVT         19      /* Peer feature event */
 #define BSA_AV_DELAY_RPT_EVT    20      /* Delay report event */
+#define BSA_AV_META_RSP_EVT     21
 typedef UINT8 tBSA_AV_EVT;
 
 #define BSA_AV_FEEDING_ASYNCHRONOUS 0   /* asynchronous feeding, use tx av timer */
@@ -284,7 +285,6 @@ typedef UINT8 tBSA_AV_CHANNEL_MODE;
 #define tBSA_STS                    tAVRC_STS
 #define tBSA_ITEM_PLAYER            tAVRC_ITEM_PLAYER
 #define tBSA_ITEM_FOLDER            tAVRC_ITEM_FOLDER
-#define tBSA_ITEM_MEDIA             tAVRC_ITEM_MEDIA
 #define tBSA_NOTIF_RSP_PARAM        tAVRC_NOTIF_RSP_PARAM
 #define tBSA_CHG_PATH_RSP           tAVRC_CHG_PATH_RSP
 #define tBSA_RSP                    tAVRC_RSP
@@ -499,6 +499,17 @@ typedef struct
     UINT32      attrs[BSA_AVRC_MAX_ATTR_COUNT];
 } tBSA_AV_META_GET_ITEM_ATTRS_CMD;
 
+/* AddToNowPlaying */
+typedef struct
+{
+    UINT8       pdu;
+    UINT8       status;
+    UINT8       opcode;         /* Op Code (assigned by AVRC_BldCommand according to pdu) */
+    UINT8       scope;
+    tBSA_UID    uid;
+    UINT16      uid_counter;
+} tBSA_AV_META_ADD_TO_PLAY_CMD;
+
 /* data associated with BSA_AV_META_MSG_EVT */
 typedef struct
 {
@@ -513,9 +524,10 @@ typedef struct
     tBSA_AV_META_GET_ELEM_ATTRS_CMD     get_elem_attrs;
     tBSA_AV_META_GET_FOLDER_ITEMS_CMD   get_folder_items;
     tBSA_AV_REG_NOTIF_CMD               reg_notif;
-    tBSA_CHG_PATH_CMD                  change_path;
-    tBSA_PLAY_ITEM_CMD                 play_item;
+    tBSA_CHG_PATH_CMD                   change_path;
+    tBSA_PLAY_ITEM_CMD                  play_item;
     tBSA_AV_META_GET_ITEM_ATTRS_CMD     get_item_attrs;
+    tBSA_AV_META_ADD_TO_PLAY_CMD        add_to_play;
     }param;
 
 } tBSA_AV_META_MSG_MSG;
@@ -528,37 +540,6 @@ typedef struct
     tBTA_AV_RC_INFO    ct;                 /* Peer CT role info */
 } tBSA_AV_RC_FEAT_MSG;
 
-/* union of data associated with AV callback */
-typedef union
-{
-    tBSA_AV_OPEN_MSG open;
-    tBSA_AV_CLOSE_MSG close;
-    tBSA_AV_DELAY_MSG delay;
-    tBSA_AV_START_MSG start;
-    tBSA_AV_STOP_MSG stop;
-    tBSA_AV_RC_OPEN_MSG rc_open;
-    tBSA_AV_RC_CLOSE_MSG rc_close;
-    tBSA_AV_REMOTE_CMD_MSG remote_cmd;
-    tBSA_AV_REMOTE_RSP_MSG remote_rsp;
-    tBSA_AV_VENDOR_CMD_MSG vendor_cmd;
-    tBSA_AV_VENDOR_RSP_MSG vendor_rsp;
-    tBSA_AV_PEND_MSG       pend;
-    tBSA_AV_META_MSG_MSG meta_msg;
-    tBSA_AV_RC_FEAT_MSG rc_feat;
-} tBSA_AV_MSG;
-
-/* AV callback */
-typedef void (tBSA_AV_CBACK)(tBSA_AV_EVT event, tBSA_AV_MSG *p_data);
-
-/* data associated with BSA_AvEnable */
-typedef struct
-{
-    tBSA_SEC_AUTH sec_mask;         /* Security type */
-    tBSA_AV_FEAT features;          /* Supported AV features */
-    tBSA_AV_CODEC_INFO aptx_caps;   /* apt-X capabilities (if id=apt-X apt-X support enabled) */
-    tBSA_AV_CODEC_INFO sec_caps;    /* SEC capabilities (if id=SEC SEC support enabled) */
-    tBSA_AV_CBACK *p_cback;         /* Callback */
-} tBSA_AV_ENABLE;
 
 /* data associated with BSA_AvDisable */
 typedef struct
@@ -665,8 +646,18 @@ typedef struct {
 } tBSA_AV_META_GET_PLAYSTATUS_RSP;
 
 
+typedef struct
+{
+    tAVRC_UID           uid;            /* The uid of this media element item */
+    UINT8               type;           /* Use AVRC_MEDIA_TYPE_AUDIO or AVRC_MEDIA_TYPE_VIDEO. */
+    tAVRC_FULL_NAME     name;           /* The media name, name length and character set id. */
+    UINT8               attr_count;     /* The number of attributes in p_attr_list */
+    tBSA_AV_ATTR_ENTRY  attr_list[BSA_AVRC_MAX_ATTR_COUNT];    /* Attribute entry list. */
+}tBSA_ITEM_MEDIA;
+
+
 #define BSA_AV_ITEM_NAME_LEN_MAX    64
-#define BSA_AVRC_MAX_ITEM_COUNT     5
+#define BSA_AVRC_MAX_ITEM_COUNT     1
 
 typedef struct
 {
@@ -726,6 +717,7 @@ typedef struct
 #define BSA_AVRC_PDU_CHANGE_PATH                    AVRC_PDU_CHANGE_PATH     /* change path */
 #define BSA_AVRC_PDU_GET_ITEM_ATTRIBUTES            AVRC_PDU_GET_ITEM_ATTRIBUTES     /* get item attr */
 #define BSA_AVRC_PDU_PLAY_ITEM                      AVRC_PDU_PLAY_ITEM     /* play item */
+#define BSA_AVRC_PDU_ADD_TO_NOW_PLAYING             AVRC_PDU_ADD_TO_NOW_PLAYING   /* 0x90 */
 
 
 /* data associated with BSA_AvMetaRsp */
@@ -745,6 +737,7 @@ typedef struct
     tBSA_CHG_PATH_RSP              change_path;
     tBSA_AV_META_GET_ELEM_ATTR_RSP  get_item_attrs;
     tBSA_RSP                       play_item;
+    tBSA_RSP                       add_to_play;
     }param;
 
 } tBSA_AV_META_RSP_CMD;
@@ -761,6 +754,39 @@ typedef struct
 {
     UINT8 level;
 } tBSA_AV_BUSY_LEVEL;
+
+/* union of data associated with AV callback */
+typedef union
+{
+    tBSA_AV_OPEN_MSG open;
+    tBSA_AV_CLOSE_MSG close;
+    tBSA_AV_DELAY_MSG delay;
+    tBSA_AV_START_MSG start;
+    tBSA_AV_STOP_MSG stop;
+    tBSA_AV_RC_OPEN_MSG rc_open;
+    tBSA_AV_RC_CLOSE_MSG rc_close;
+    tBSA_AV_REMOTE_CMD_MSG remote_cmd;
+    tBSA_AV_REMOTE_RSP_MSG remote_rsp;
+    tBSA_AV_VENDOR_CMD_MSG vendor_cmd;
+    tBSA_AV_VENDOR_RSP_MSG vendor_rsp;
+    tBSA_AV_PEND_MSG       pend;
+    tBSA_AV_META_MSG_MSG meta_msg;
+    tBSA_AV_META_RSP_CMD meta_rsp;
+    tBSA_AV_RC_FEAT_MSG rc_feat;
+} tBSA_AV_MSG;
+
+/* AV callback */
+typedef void (tBSA_AV_CBACK)(tBSA_AV_EVT event, tBSA_AV_MSG *p_data);
+
+/* data associated with BSA_AvEnable */
+typedef struct
+{
+    tBSA_SEC_AUTH sec_mask;         /* Security type */
+    tBSA_AV_FEAT features;          /* Supported AV features */
+    tBSA_AV_CODEC_INFO aptx_caps;   /* apt-X capabilities (if id=apt-X apt-X support enabled) */
+    tBSA_AV_CODEC_INFO sec_caps;    /* SEC capabilities (if id=SEC SEC support enabled) */
+    tBSA_AV_CBACK *p_cback;         /* Callback */
+} tBSA_AV_ENABLE;
 
 /*****************************************************************************
  **  External Function Declarations

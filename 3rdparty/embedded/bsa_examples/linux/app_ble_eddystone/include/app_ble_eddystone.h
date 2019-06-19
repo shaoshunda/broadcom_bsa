@@ -36,12 +36,12 @@ void app_ble_eddystone_init(void);
  **
  ** Description     start eddystone UID advertisement
  **
- ** Parameters      None
+ ** Parameters      index:instance id for multi adv
  **
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_uid_adv(void);
+int app_ble_eddystone_start_eddystone_uid_adv(UINT8 index);
 
 /*******************************************************************************
  **
@@ -49,12 +49,12 @@ int app_ble_eddystone_start_eddystone_uid_adv(void);
  **
  ** Description     start eddystone URL advertisement
  **
- ** Parameters      None
+ ** Parameters      index:instance id for multi adv
  **
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_url_adv(void);
+int app_ble_eddystone_start_eddystone_url_adv(UINT8 index);
 
 /*******************************************************************************
  **
@@ -62,12 +62,12 @@ int app_ble_eddystone_start_eddystone_url_adv(void);
  **
  ** Description     start eddystone TLM advertisement
  **
- ** Parameters      None
+ ** Parameters      index:instance id for multi adv
  **
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_start_eddystone_tlm_adv(void);
+int app_ble_eddystone_start_eddystone_tlm_adv(UINT8 index);
 
 /*******************************************************************************
  **
@@ -75,12 +75,12 @@ int app_ble_eddystone_start_eddystone_tlm_adv(void);
  **
  ** Description     stop eddystone UID advertisement
  **
- ** Parameters      None
+ ** Parameters      index:instance id for multi adv
  **
  ** Returns         status: 0 if success / -1 otherwise
  **
  *******************************************************************************/
-int app_ble_eddystone_stop_eddystone_adv(void);
+int app_ble_eddystone_stop_eddystone_adv(UINT8 index);
 
 /*******************************************************************************
  **
@@ -223,4 +223,16 @@ int app_ble_eddystone_send_data_to_eddystone_server(void);
  *******************************************************************************/
 void app_ble_eddystone_init_disc_cback(tBSA_DISC_EVT event, tBSA_DISC_MSG *p_data);
 
+/*******************************************************************************
+ **
+ ** Function        app_ble_eddystone_set_adv_params
+ **
+ ** Description     set adv params
+ **
+ ** Parameters      instance ID of the advertisement (0 if non multi-adv)
+ **
+ ** Returns         status: 0 if success / -1 otherwise
+ **
+ *******************************************************************************/
+int app_ble_eddystone_set_adv_params(UINT8 inst_id);
 #endif

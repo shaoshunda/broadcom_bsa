@@ -1119,7 +1119,6 @@ void app_hs_cback(tBSA_HS_EVT event, tBSA_HS_MSG *p_data)
         default:
             printf("Not supported 0x%08x\n", p_data->conn.service);
             return;
-            break;
         }
 
         /* check if this conneciton is already opened */
@@ -1213,6 +1212,8 @@ void app_hs_cback(tBSA_HS_EVT event, tBSA_HS_MSG *p_data)
            p_conn->uipc_connected)
         {
             APPL_TRACE_DEBUG0("Closing UIPC Channel");
+            UIPC_Ioctl(p_conn->uipc_channel,UIPC_REG_CBACK,NULL);
+            GKI_delay(10);
             UIPC_Close(p_conn->uipc_channel);
             p_conn->uipc_connected = FALSE;
         }

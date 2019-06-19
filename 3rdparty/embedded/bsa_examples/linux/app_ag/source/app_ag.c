@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "app_ag.h"
 #include "app_utils.h"
@@ -27,6 +28,7 @@
  * Defines
  */
 #define APP_AG_SAMPLE_RATE      8000      /* AG Voice sample rate is always 8KHz */
+#define APP_AG_SAMPLE_RATE_16K  16000
 #define APP_AG_BITS_PER_SAMPLE  16        /* AG Voice sample size is 16 bits */
 #define APP_AG_CHANNEL_NB       1         /* AG Voice sample in mono */
 
@@ -460,7 +462,6 @@ void app_ag_open_audio(void)
     {
         APP_ERROR1("BSA_AgAudioOpen failed (%d)", status);
     }
-
 }
 
 /*******************************************************************************
@@ -538,11 +539,11 @@ void app_ag_close_playing_file(void)
 void app_ag_open_rec_file(char *filename)
 {
     app_ag_cb.fd_sco_in_file = app_wav_create_file(filename, O_EXCL);
-
+/*
     app_ag_cb.audio_format.bits_per_sample = APP_AG_BITS_PER_SAMPLE;
     app_ag_cb.audio_format.nb_channels = APP_AG_CHANNEL_NB;
     app_ag_cb.audio_format.sample_rate = APP_AG_SAMPLE_RATE;
-
+*/
 }
 
 /*******************************************************************************
@@ -577,7 +578,7 @@ int app_ag_write_to_file(UINT8 *p_buf, int size)
  ** Returns          Number of bytes read (0 if error or end of file)
  **
  *******************************************************************************/
-int app_ag_sco_out_read_file(void)
+int app_ag_sco_out_read_file(const tAPP_WAV_FILE_FORMAT *p_format, UINT8* p_buf, UINT32 size)
 {
     tAPP_WAV_FILE_FORMAT format;
     int nb_bytes = 0;
@@ -589,7 +590,7 @@ int app_ag_sco_out_read_file(void)
         /* Open only if audio is opened */
         if (app_ag_cb.voice_opened)
         {
-            app_ag_cb.fd_sco_out_file = app_wav_open_file(APP_AG_SCO_OUT_SOUND_FILE, &format);
+            app_ag_cb.fd_sco_out_file = app_wav_open_file(app_ag_cb.sco_out_file, &format);
         }
 
         if (app_ag_cb.fd_sco_out_file < 0)
@@ -599,7 +600,7 @@ int app_ag_sco_out_read_file(void)
         }
     }
 
-    nb_bytes = read(app_ag_cb.fd_sco_out_file, app_ag_cb.pcmbuf, sizeof(app_ag_cb.pcmbuf));
+    nb_bytes = app_wav_read_data(app_ag_cb.fd_sco_out_file, p_format, (char*)p_buf, size);
 
     if (nb_bytes <= 0)
     {
@@ -614,6 +615,56 @@ int app_ag_sco_out_read_file(void)
 
     return nb_bytes;
 }
+
+//app_wav_read_data had changed 16bits data to little endian
+void app_ag_downsample(UINT8* dst_buf, UINT8* src_buf, UINT32 src_size)
+{
+    UINT32 i, j, tmp16_size;
+    INT16 *tmp16_src_ptr, *tmp16_dst_ptr;
+
+    if(src_size < 2)
+        return;
+        
+    tmp16_src_ptr = (INT16 *)src_buf;
+    tmp16_dst_ptr = (INT16 *)dst_buf;
+    
+    tmp16_size = (src_size - 2) / 4 + 1;
+    for(i = 0, j = 0; i < tmp16_size; i++)
+    {
+        tmp16_dst_ptr[i] = tmp16_src_ptr[j];
+        j += 2;
+    }   
+}
+
+//app_wav_read_data had changed 16bits data to little endian
+//linear interpolation 
+UINT16 app_ag_upsample(UINT8* dst_buf, UINT8* src_buf, UINT8 src_size, INT16 sample_prev)
+{
+    UINT32 i, j, tmp16_size;
+    INT16 tmp16;
+    INT16 *tmp16_src_ptr, *tmp16_dst_ptr;
+
+    tmp16_src_ptr = (INT16 *)src_buf;
+    tmp16_dst_ptr = (INT16 *)dst_buf;
+
+    tmp16_size = src_size / 2;
+
+    tmp16 = (tmp16_src_ptr[0] - sample_prev) / 2;
+    tmp16_dst_ptr[0] = sample_prev + tmp16;
+    tmp16_dst_ptr[1] = tmp16_src_ptr[0];
+
+    for(i = 1, j = 2; i < tmp16_size; i++)
+    {
+        tmp16 = (tmp16_src_ptr[i] - tmp16_src_ptr[i - 1]) / 2;
+        tmp16_dst_ptr[j]     =  tmp16_src_ptr[i -1] + tmp16;
+        tmp16_dst_ptr[j + 1] =  tmp16_src_ptr[i];
+        j += 2;
+    }
+    
+    return tmp16_src_ptr[i - 1];
+}
+
+
 
 #ifndef PCM_ALSA_AG
 /*******************************************************************************
@@ -633,7 +684,8 @@ static void  app_ag_play_file_thread(void)
     int nb_bytes = 0;
     tAPP_WAV_FILE_FORMAT wav_format;
     int index;
-
+    static INT16 s_sample_prev = 0;
+    
     APP_DEBUG0("Entering");
 
     if (!app_ag_cb.voice_opened)
@@ -642,20 +694,74 @@ static void  app_ag_play_file_thread(void)
         return;
     }
 
-    if ((app_wav_format(APP_AG_SCO_OUT_SOUND_FILE, &wav_format) == 0) &&
-        (wav_format.bits_per_sample == APP_AG_BITS_PER_SAMPLE)        &&
-        (wav_format.nb_channels     == APP_AG_CHANNEL_NB)             &&
-        (wav_format.sample_rate     == APP_AG_SAMPLE_RATE))
+    memset(app_ag_cb.sco_out_file, 0, sizeof(app_ag_cb.sco_out_file));
+    if(app_ag_cb.audio_format.sample_rate == APP_AG_SAMPLE_RATE)
     {
-        status = 0;
+        APP_DEBUG0("Sample: NBS");
+        strcpy(app_ag_cb.sco_out_file, APP_AG_SCO_OUT_SOUND_FILE);
     }
-    if (status != 0)
+    else
     {
-        APP_ERROR1("'%s' does not exist or is not right format (%d/%d/%d)",
-                APP_AG_SCO_OUT_SOUND_FILE, APP_AG_SAMPLE_RATE, APP_AG_CHANNEL_NB, APP_AG_BITS_PER_SAMPLE);
-        return;
+        APP_DEBUG0("Sample: WBS");
+        strcpy(app_ag_cb.sco_out_file, APP_AG_SCO_OUT_SOUND_FILE_16K);
     }
 
+    app_ag_cb.sample_convert = APP_AG_SAMPLE_CONVERT_NO;
+    if (app_wav_format(app_ag_cb.sco_out_file, &wav_format) == 0)
+    {
+        if( (wav_format.bits_per_sample == app_ag_cb.audio_format.bits_per_sample)    &&
+            (wav_format.nb_channels     == app_ag_cb.audio_format.nb_channels)        &&
+            (wav_format.sample_rate     == app_ag_cb.audio_format.sample_rate))
+        {
+            status = 0;
+        }
+    }
+    else
+    {
+        memset(app_ag_cb.sco_out_file, 0, sizeof(app_ag_cb.sco_out_file));
+        if(app_ag_cb.audio_format.sample_rate == APP_AG_SAMPLE_RATE)
+        {
+            strcpy(app_ag_cb.sco_out_file, APP_AG_SCO_OUT_SOUND_FILE_16K);
+            app_ag_cb.sample_convert = APP_AG_SAMPLE_CONVERT_DOWN;
+        }
+        else
+        {
+            strcpy(app_ag_cb.sco_out_file, APP_AG_SCO_OUT_SOUND_FILE);
+            app_ag_cb.sample_convert = APP_AG_SAMPLE_CONVERT_UP;
+        }
+        
+        if ((app_wav_format(app_ag_cb.sco_out_file, &wav_format) == 0)                &&
+            (wav_format.bits_per_sample == app_ag_cb.audio_format.bits_per_sample)    &&
+            (wav_format.nb_channels     == app_ag_cb.audio_format.nb_channels)
+           )
+        {
+            if(((app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_DOWN) && 
+                (wav_format.sample_rate   == APP_AG_SAMPLE_RATE_16K))
+                ||
+                ((app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_UP)  && 
+                (wav_format.sample_rate   == APP_AG_SAMPLE_RATE))
+              )
+                status = 0;
+        }
+    }
+
+    if (status != 0)
+    {
+        APP_ERROR1("'%s' does not exist or is not right format (%d/%d/%d), sample convert:%d",
+                app_ag_cb.sco_out_file, app_ag_cb.audio_format.sample_rate, 
+                app_ag_cb.audio_format.nb_channels, app_ag_cb.audio_format.bits_per_sample, 
+                app_ag_cb.sample_convert);
+        return;
+    }
+    else
+    {
+        APP_DEBUG1("ag format (%d/%d/%d) - start to play '%s'(%d/%d/%d), sample convert:%d",
+                app_ag_cb.audio_format.sample_rate, app_ag_cb.audio_format.nb_channels,
+                app_ag_cb.audio_format.bits_per_sample, app_ag_cb.sco_out_file,
+                wav_format.sample_rate, wav_format.nb_channels,
+                wav_format.bits_per_sample, app_ag_cb.sample_convert);
+    }
+    
     for (index = 0; index < APP_AG_MAX_NUM_CONN; index++)
     {
         /* Play on the first channel id */
@@ -668,10 +774,38 @@ static void  app_ag_play_file_thread(void)
         return;
     }
 
+    UINT32 read_size = sizeof(app_ag_cb.pcmbuf) * 2;
+    UINT8* read_buf = NULL;
+
+    if((read_buf = (UINT8*)malloc(read_size)) == NULL)
+    {
+        APP_ERROR0("malloc buffer failed");        
+        return;
+    }
+    
+    if(app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_UP)
+        read_size /= 4;
+    else if(app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_NO)
+        read_size /= 2;
     do
     {
-        if ((nb_bytes = app_ag_sco_out_read_file()) > 0)
+        if ((nb_bytes = app_ag_sco_out_read_file(&wav_format, read_buf, read_size)) > 0)
         {
+            if(app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_NO)
+            {
+                memcpy(app_ag_cb.pcmbuf, read_buf, nb_bytes);
+            }
+            else if(app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_UP)
+            {
+                s_sample_prev = app_ag_upsample(app_ag_cb.pcmbuf, read_buf, nb_bytes, s_sample_prev);
+                nb_bytes *= 2;
+            }
+            else if(app_ag_cb.sample_convert == APP_AG_SAMPLE_CONVERT_DOWN)
+            {
+                app_ag_downsample(app_ag_cb.pcmbuf, read_buf, nb_bytes);
+                nb_bytes /= 2;
+            }
+
             if (!UIPC_Send(app_ag_cb.uipc_channel[index], 0, app_ag_cb.pcmbuf, nb_bytes))
             {
                 APP_ERROR1("UIPC_Send(%d) failed", app_ag_cb.uipc_channel[index]);
@@ -685,6 +819,8 @@ static void  app_ag_play_file_thread(void)
 
     } while ((nb_bytes != 0) && app_ag_cb.voice_opened && !app_ag_cb.stop_play);
 
+    if(read_buf != NULL)
+        free(read_buf);
     if (app_ag_cb.fd_sco_out_file >= 0)
     {
         status = close(app_ag_cb.fd_sco_out_file);
@@ -948,6 +1084,7 @@ void app_ag_cback(tBSA_AG_EVT event, tBSA_AG_MSG *p_data)
         if (p_data->open.status == BSA_SUCCESS)
         {
             app_ag_cb.opened = TRUE;
+            app_ag_cb.audio_format.sample_rate = APP_AG_SAMPLE_RATE;
         }
         else
         {
@@ -1015,6 +1152,8 @@ void app_ag_cback(tBSA_AG_EVT event, tBSA_AG_MSG *p_data)
 
     case BSA_AG_WBS_EVT: /* WBS (for info)*/
         APP_DEBUG1("BSA_AG_WBS_EVT: s=%d(%s)", p_data->hdr.status, app_ag_status_2_str(p_data->hdr.status));
+        if(p_data->hdr.status == BSA_SUCCESS)
+            app_ag_cb.audio_format.sample_rate = APP_AG_SAMPLE_RATE_16K;
         break;
 
     case BSA_AG_SPK_EVT:
@@ -1179,8 +1318,8 @@ int app_ag_open_alsa_duplex(void)
         status = snd_pcm_set_params(alsa_handle_playback,
                 SND_PCM_FORMAT_S16_LE,
                 SND_PCM_ACCESS_RW_INTERLEAVED,
-                APP_AG_CHANNEL_NB,
-                APP_AG_SAMPLE_RATE,
+                app_ag_cb.audio_format.nb_channels,
+                app_ag_cb.audio_format.sample_rate,
                 1, /* SW resample */
                 500000);/* 500msec */
         if (status < 0)
@@ -1212,8 +1351,8 @@ int app_ag_open_alsa_duplex(void)
         status = snd_pcm_set_params(alsa_handle_capture,
                 SND_PCM_FORMAT_S16_LE,
                 SND_PCM_ACCESS_RW_INTERLEAVED,
-                APP_AG_CHANNEL_NB,
-                APP_AG_SAMPLE_RATE,
+                app_ag_cb.audio_format.nb_channels,
+                app_ag_cb.audio_format.sample_rate,
                 1, /* SW resample */
                 500000);/* 500msec */
         if (status < 0)
@@ -1351,6 +1490,12 @@ void app_ag_init(void)
         app_ag_cb.uipc_channel[index] = UIPC_CH_ID_BAD;
         app_ag_cb.hndl[index] = BSA_AG_BAD_HANDLE;
     }
+
+    app_ag_cb.audio_format.bits_per_sample = APP_AG_BITS_PER_SAMPLE;
+    app_ag_cb.audio_format.nb_channels = APP_AG_CHANNEL_NB;
+    app_ag_cb.audio_format.sample_rate = APP_AG_SAMPLE_RATE;
+    memset(app_ag_cb.sco_out_file, 0, sizeof(app_ag_cb.sco_out_file));
+    app_ag_cb.sample_convert = APP_AG_SAMPLE_CONVERT_NO;
 }
 
 /*******************************************************************************
