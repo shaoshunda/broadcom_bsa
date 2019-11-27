@@ -62,14 +62,14 @@ $(objdir):
 	@$(ECHO) Creating object directory '$(objdir)'.
 	-@$(MKDIR) -p $(objdir)
 
-$(objdir)/%.o: %.c
+$(objdir)/%.o: %.c | $(objdir)
 	@$(ECHO) Compiling [$(CC)] $<
 	@$(CC) -c -MD $(CCFLAGS) $(GLOBAL_DEFINE) $(TARGET_DEF) $(CCINC) -o $@ $<
 
 # include the dependencies (if they exist)
 -include $(objlist:.o=.d)
 
-$(bluetooth_app): $(builddir) $(objdir) $(objlist) $(bsalib)
+$(bluetooth_app): $(objlist) $(bsalib) | $(builddir)
 ifneq ($(strip $(bsalib)),)
 	@$(ECHO) Linking application $@ with $(notdir $(bsalib))
 	@$(LINK) $(LINKFLAGS) -L $(dir $(bsalib)) $(TARGET_LINK_FLAGS) -o $@ $(objlist) -lbsa $(LINKLIBS)
