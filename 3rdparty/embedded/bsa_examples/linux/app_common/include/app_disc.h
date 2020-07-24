@@ -247,7 +247,7 @@ int app_disc_set_nb_devices(int nb_devices);
  ** Returns          void
  **
  *******************************************************************************/
-void app_disc_parse_eir(UINT8 *p_eir, UINT8 *playrole);
+void app_disc_parse_eir(UINT8 *p_eir, char *full_name, char *short_name, UINT8 *playrole);
 
 /*******************************************************************************
  **
