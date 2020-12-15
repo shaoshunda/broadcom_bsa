@@ -21,8 +21,8 @@ case "$1" in
     cp /etc/bsa_file/* /data/bsa/config/test_files/av/
     cd /data/bsa/config
     echo "start broadcom bluetooth server bsa_sever"
-    bsa_server -r 12 -p $hcd_file -d $ttys_dev -all=0 &
-    #bsa_server -r 12 -b /data/bsa/btsnoop.log -p $hcd_file -d $ttys_dev > /data/bsa/bsa_log &
+    bsa_server -r 12 -pp $hcd_file -d $ttys_dev -all=0 &
+    #bsa_server -r 12 -b /data/bsa/btsnoop.log -pp $hcd_file -d $ttys_dev > /data/bsa/bsa_log &
 
     echo "|----- bluetooth bsa server is open ------|"
 
